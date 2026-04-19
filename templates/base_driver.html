@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Uang Kas{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+</head>
+<body class="layout-driver">
+
+  <!-- Top navigation driver -->
+  <header class="driver-topbar">
+    <div class="driver-topbar-inner">
+      <span class="brand-name-sm">💼 Uang Kas</span>
+      <div class="driver-user">
+        <span class="driver-name">{{ g.current_user.name }}</span>
+        <button type="button" class="btn-logout-sm" onclick="document.getElementById('logout-modal').classList.add('open')">Keluar</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="driver-main">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for cat, msg in messages %}
+        <div class="alert alert-{{ cat }}">{{ msg }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Bottom navigation -->
+  <nav class="driver-bottom-nav">
+    <a href="{{ url_for('driver_dashboard.index') }}"
+       class="bn-item {% if request.endpoint == 'driver_dashboard.index' %}active{% endif %}">
+      <span class="bn-icon">🏠</span>
+      <span class="bn-label">Home</span>
+    </a>
+    <a href="{{ url_for('driver_jenius.record') }}"
+       class="bn-item {% if 'driver_jenius' in request.endpoint %}active{% endif %}">
+      <span class="bn-icon">💳</span>
+      <span class="bn-label">Jenius</span>
+    </a>
+    <a href="{{ url_for('driver_cash.record') }}"
+       class="bn-item {% if 'driver_cash' in request.endpoint %}active{% endif %}">
+      <span class="bn-icon">💵</span>
+      <span class="bn-label">Cash</span>
+    </a>
+    <a href="{{ url_for('driver_history.jenius') }}"
+       class="bn-item {% if 'driver_history' in request.endpoint %}active{% endif %}">
+      <span class="bn-icon">📋</span>
+      <span class="bn-label">Riwayat</span>
+    </a>
+  </nav>
+
+  <!-- Modal konfirmasi logout -->
+  <div id="logout-modal" class="modal-overlay" role="dialog" aria-modal="true"
+       aria-labelledby="logout-title"
+       onclick="if(event.target===this)this.classList.remove('open')">
+    <div class="modal-box">
+      <h3 class="modal-title" id="logout-title">Keluar dari Aplikasi?</h3>
+      <p class="modal-body">
+        Apakah Anda akan keluar dari aplikasi ini?<br>
+        Gunakan <strong>Keluar</strong> hanya apabila HP ini tidak akan digunakan lagi.
+      </p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary modal-cancel" autofocus
+                onclick="document.getElementById('logout-modal').classList.remove('open')">
+          Batal
+        </button>
+        <form action="{{ url_for('auth.logout') }}" method="POST" style="display:contents">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn-danger">Keluar</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

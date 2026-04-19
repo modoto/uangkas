@@ -1,0 +1,102 @@
+{% extends "base_owner.html" %}
+{% block title %}Kelola Session{% endblock %}
+{% block page_title %}Kelola Session{% endblock %}
+
+{% block content %}
+<p class="page-desc">
+  Daftar semua session login yang sedang aktif. Anda dapat menterminasi session driver untuk memaksa mereka keluar dari aplikasi.
+</p>
+
+<!-- ── Session Owner ── -->
+<div class="section-heading-row">
+  <span class="section-heading">Session Owner</span>
+  {% if owner_sessions | length > 1 %}
+  <form action="{{ url_for('owner_sessions.terminate_others') }}" method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" class="btn btn-sm btn-secondary"
+            onclick="return confirm('Tutup semua session owner selain session yang sedang aktif ini?')">
+      Tutup Semua Selain Session Ini
+    </button>
+  </form>
+  {% endif %}
+</div>
+<div class="table-wrap">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Nama</th>
+        <th>Perangkat</th>
+        <th>IP Address</th>
+        <th>Login Sejak</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for sess in owner_sessions %}
+      <tr>
+        <td><strong>{{ sess.user.name }}</strong></td>
+        <td class="text-muted sess-device" title="{{ sess.device_info }}">
+          {{ sess.device_info or '—' }}
+        </td>
+        <td class="mono">{{ sess.ip_address or '—' }}</td>
+        <td class="mono">{{ sess.created_at | dtformat }}</td>
+        <td>
+          {% if sess.id == current_id %}
+          <span class="badge badge-active">Session Ini</span>
+          {% else %}
+          <span class="text-muted sess-active-label">Aktif</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="5" class="empty-row">Tidak ada session owner yang aktif.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- ── Session Driver ── -->
+<div class="section-heading mt-lg">Session Driver</div>
+<div class="table-wrap">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Driver</th>
+        <th>Email</th>
+        <th>Perangkat</th>
+        <th>IP Address</th>
+        <th>Login Sejak</th>
+        <th>Aksi</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for sess in driver_sessions %}
+      <tr>
+        <td><strong>{{ sess.user.name }}</strong></td>
+        <td class="text-muted">{{ sess.user.email }}</td>
+        <td class="text-muted sess-device" title="{{ sess.device_info }}">
+          {{ sess.device_info or '—' }}
+        </td>
+        <td class="mono">{{ sess.ip_address or '—' }}</td>
+        <td class="mono">{{ sess.created_at | dtformat }}</td>
+        <td>
+          <form action="{{ url_for('owner_sessions.terminate', session_id=sess.id) }}" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn-action btn-action-danger"
+                    onclick="return confirm('Terminate session {{ sess.user.name }}?')">
+              Terminate
+            </button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="6" class="empty-row">Tidak ada session driver yang aktif saat ini.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

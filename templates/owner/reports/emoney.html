@@ -1,0 +1,72 @@
+{% extends "base_owner.html" %}
+{% block title %}Rekap eMoney{% endblock %}
+{% block page_title %}Rekap Transaksi eMoney{% endblock %}
+
+{% block content %}
+<form method="GET" class="filter-bar">
+  <div class="filter-group">
+    <label class="form-label">Driver</label>
+    <select name="driver_id" class="form-input-sm">
+      <option value="all">Semua Driver</option>
+      {% for d in drivers %}
+      <option value="{{ d.id }}" {% if sel_driver == d.id %}selected{% endif %}>{{ d.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="filter-group">
+    <label class="form-label">Dari</label>
+    <input type="date" name="date_from" value="{{ date_from }}" class="form-input-sm">
+  </div>
+  <div class="filter-group">
+    <label class="form-label">Sampai</label>
+    <input type="date" name="date_to" value="{{ date_to }}" class="form-input-sm">
+  </div>
+  <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+</form>
+
+{% set total_topup = rows | selectattr('0.direction','eq','credit') | map(attribute='0.amount') | sum %}
+{% set total_used  = rows | selectattr('0.direction','eq','debit')  | map(attribute='0.amount') | sum %}
+<div class="summary-bar">
+  <div class="summary-item">
+    <span class="si-label">Total Top Up</span>
+    <span class="si-value text-green mono">{{ total_topup | rupiah }}</span>
+  </div>
+  <div class="summary-item">
+    <span class="si-label">Total Pemakaian</span>
+    <span class="si-value text-red mono">{{ total_used | rupiah }}</span>
+  </div>
+</div>
+
+<div class="table-wrap">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Tanggal &amp; Jam</th>
+        <th>Driver</th>
+        <th>Jenis</th>
+        <th class="text-right">Nominal</th>
+        <th class="text-right">Saldo Sesudah</th>
+        <th>Diinput</th>
+        <th>Catatan</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for txn, wallet, user in rows %}
+      <tr>
+        <td class="mono">{{ txn.txn_date | dtformat }}</td>
+        <td>{{ wallet.driver.name }}</td>
+        <td>{{ txn.txn_type.label }}</td>
+        <td class="text-right mono {% if txn.is_credit %}text-green{% else %}text-red{% endif %}">
+          {{ '+' if txn.is_credit else '-' }}{{ txn.amount | rupiah }}
+        </td>
+        <td class="text-right mono">{{ txn.balance_after | rupiah }}</td>
+        <td class="text-muted">{{ user.name }}</td>
+        <td class="text-muted">{{ txn.notes or '—' }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="7" class="empty-row">Tidak ada transaksi untuk filter yang dipilih.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

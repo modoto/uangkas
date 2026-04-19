@@ -1,0 +1,71 @@
+{% extends "base_owner.html" %}
+{% block title %}Jenis Transaksi{% endblock %}
+{% block page_title %}Jenis Transaksi{% endblock %}
+
+{% block content %}
+<div class="page-actions">
+  <a href="{{ url_for('owner_txntypes.add') }}" class="btn btn-primary">+ Tambah Jenis</a>
+</div>
+
+<div class="table-wrap">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Kode</th>
+        <th>Label</th>
+        <th>Wallet</th>
+        <th>Arah</th>
+        <th>Urutan</th>
+        <th>Tipe</th>
+        <th>Status</th>
+        <th>Aksi</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for tt in types %}
+      <tr>
+        <td class="mono text-muted">{{ tt.code }}</td>
+        <td><strong>{{ tt.label }}</strong></td>
+        <td>
+          <span class="badge-wallet badge-{{ tt.wallet_type }}">
+            {{ tt.wallet_type | upper }}
+          </span>
+        </td>
+        <td>
+          <span class="badge {% if tt.direction == 'credit' %}badge-credit{% elif tt.direction == 'debit' %}badge-debit{% else %}badge-both{% endif %}">
+            {{ tt.direction | upper }}
+          </span>
+        </td>
+        <td class="text-center mono">{{ tt.sort_order }}</td>
+        <td>
+          {% if tt.is_system %}
+          <span class="badge badge-system">System</span>
+          {% else %}
+          <span class="badge badge-custom">Custom</span>
+          {% endif %}
+        </td>
+        <td>
+          <span class="badge {% if tt.is_active %}badge-active{% else %}badge-inactive{% endif %}">
+            {{ 'Aktif' if tt.is_active else 'Nonaktif' }}
+          </span>
+        </td>
+        <td>
+          <div class="action-group">
+            <a href="{{ url_for('owner_txntypes.edit', tt_id=tt.id) }}" class="btn-action">Edit</a>
+            {% if not tt.is_system and tt.is_deletable %}
+            <form action="{{ url_for('owner_txntypes.delete', tt_id=tt.id) }}" method="POST" style="display:inline">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="btn-action btn-action-danger"
+                      onclick="return confirm('Hapus jenis transaksi \'{{ tt.label }}\'?')">
+                Hapus
+              </button>
+            </form>
+            {% endif %}
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

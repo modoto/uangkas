@@ -1,0 +1,82 @@
+{% extends "base_driver.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="driver-dashboard">
+  <div class="greeting">
+    Halo, <strong>{{ g.current_user.name }}</strong> 👋
+  </div>
+
+  <!-- 3 Kartu saldo -->
+  <div class="wallet-cards-driver">
+    {% set jenius = wallets.get('jenius') %}
+    {% set emoney = wallets.get('emoney') %}
+    {% set cash   = wallets.get('cash') %}
+
+    <div class="wcd jenius">
+      <div class="wcd-label">💳 Jenius</div>
+      <div class="wcd-balance">{{ jenius.current_balance | rupiah if jenius else 'Rp 0' }}</div>
+      <a href="{{ url_for('driver_jenius.record') }}" class="wcd-action">Catat Transaksi →</a>
+    </div>
+
+    <div class="wcd emoney">
+      <div class="wcd-label">🎫 eMoney</div>
+      <div class="wcd-balance">{{ emoney.current_balance | rupiah if emoney else 'Rp 0' }}</div>
+      <span class="wcd-sub">Top up oleh owner</span>
+    </div>
+
+    <div class="wcd cash">
+      <div class="wcd-label">💵 Uang Cash</div>
+      <div class="wcd-balance">{{ cash.current_balance | rupiah if cash else 'Rp 0' }}</div>
+      <a href="{{ url_for('driver_cash.record') }}" class="wcd-action">Catat Pengeluaran →</a>
+    </div>
+  </div>
+
+  <!-- Tombol aksi cepat -->
+  <div class="quick-actions">
+    <a href="{{ url_for('driver_jenius.record') }}" class="qa-btn qa-jenius">
+      <span class="qa-icon">💳</span>
+      <span class="qa-label">Catat Transaksi<br><small>Jenius</small></span>
+    </a>
+    <a href="{{ url_for('driver_cash.record') }}" class="qa-btn qa-cash">
+      <span class="qa-icon">💵</span>
+      <span class="qa-label">Catat Pengeluaran<br><small>Uang Cash</small></span>
+    </a>
+  </div>
+
+  <!-- 5 transaksi terakhir -->
+  <div class="section-heading-sm">Transaksi Terakhir</div>
+  <div class="txn-list">
+    {% for txn in recent_txns %}
+    <div class="txn-item">
+      <div class="txn-left">
+        <span class="txn-type">{{ txn.txn_type.label }}</span>
+        <span class="txn-date text-muted">{{ txn.txn_date | dtformat }}</span>
+        {% if txn.notes %}
+        <span class="txn-notes text-muted">{{ txn.notes }}</span>
+        {% endif %}
+      </div>
+      <div class="txn-right">
+        <span class="txn-amount {% if txn.is_credit %}text-green{% else %}text-red{% endif %} mono">
+          {{ '+' if txn.is_credit else '-' }}{{ txn.amount | rupiah }}
+        </span>
+        <span class="txn-wallet">
+          <span class="badge-wallet badge-{{ txn.wallet.wallet_type }}">
+            {{ txn.wallet.wallet_type | upper }}
+          </span>
+        </span>
+      </div>
+    </div>
+    {% else %}
+    <div class="empty-state-sm">Belum ada transaksi.</div>
+    {% endfor %}
+  </div>
+
+  {% if recent_txns %}
+  <div class="view-all-links">
+    <a href="{{ url_for('driver_history.jenius') }}">Lihat semua transaksi Jenius →</a>
+    <a href="{{ url_for('driver_history.cash') }}">Lihat semua transaksi Cash →</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

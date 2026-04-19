@@ -1,0 +1,88 @@
+{% extends "base_driver.html" %}
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="driver-history-page">
+  <h2 class="form-title">{{ title }}</h2>
+
+  <!-- Ringkasan (hanya untuk cash) -->
+  {% if wallet_type == 'cash' %}
+  <div class="cash-mini-summary">
+    <div class="cms-item">
+      <span class="cms-label">Total Masuk</span>
+      <span class="cms-value text-green mono">{{ total_in | rupiah }}</span>
+    </div>
+    <div class="cms-item">
+      <span class="cms-label">Total Keluar</span>
+      <span class="cms-value text-red mono">{{ total_out | rupiah }}</span>
+    </div>
+    <div class="cms-item">
+      <span class="cms-label">Saldo Saat Ini</span>
+      <span class="cms-value mono">{{ wallet.current_balance | rupiah }}</span>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- List transaksi -->
+  <div class="txn-list">
+    {% for txn in txns.items %}
+    <div class="txn-item {% if txn.is_cancelled %}txn-cancelled{% endif %}">
+      <div class="txn-left">
+        <span class="txn-type">
+          {% if txn.notes and txn.notes.startswith('[BATAL]') %}
+          <span class="badge-reversal">Pembatalan</span>
+          {% else %}
+          {{ txn.txn_type.label }}
+          {% endif %}
+          {% if txn.linked_txn_id and not (txn.notes and txn.notes.startswith('[BATAL]')) %}
+          <span class="badge-linked" title="Linked transaction">🔗</span>
+          {% endif %}
+          {% if txn.is_cancelled %}
+          <span class="badge-cancelled">Dibatalkan</span>
+          {% endif %}
+        </span>
+        <span class="txn-date text-muted mono">{{ txn.txn_date | dtformat }}</span>
+        {% if txn.notes %}
+        <span class="txn-notes text-muted">{{ txn.notes }}</span>
+        {% endif %}
+      </div>
+      <div class="txn-right">
+        <span class="txn-amount {% if txn.is_credit %}text-green{% else %}text-red{% endif %} mono">
+          {{ '+' if txn.is_credit else '-' }}{{ txn.amount | rupiah }}
+        </span>
+        <span class="txn-balance text-muted mono">{{ txn.balance_after | rupiah }}</span>
+        {% if txn.created_by == g.current_user.id and not txn.is_cancelled
+              and not (txn.notes and txn.notes.startswith('[BATAL]')) %}
+        <a href="{{ url_for('driver_transactions.edit', txn_id=txn.id) }}"
+           class="btn-revisi">Revisi</a>
+        {% endif %}
+      </div>
+    </div>
+    {% else %}
+    <div class="empty-state-sm">Belum ada transaksi.</div>
+    {% endfor %}
+  </div>
+
+  <!-- Pagination -->
+  {% if txns.pages > 1 %}
+  <div class="pagination">
+    {% if txns.has_prev %}
+    <a href="?page={{ txns.prev_num }}" class="page-btn">← Sebelumnya</a>
+    {% endif %}
+    <span class="page-info">{{ txns.page }} / {{ txns.pages }}</span>
+    {% if txns.has_next %}
+    <a href="?page={{ txns.next_num }}" class="page-btn">Selanjutnya →</a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <!-- Link ke riwayat lainnya -->
+  <div class="history-switch">
+    {% if wallet_type == 'jenius' %}
+    <a href="{{ url_for('driver_history.cash') }}">Lihat Riwayat Cash →</a>
+    {% else %}
+    <a href="{{ url_for('driver_history.jenius') }}">Lihat Riwayat Jenius →</a>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

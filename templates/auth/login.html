@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Masuk — Uang Kas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="auth-page">
+  <div class="auth-card">
+    <div class="auth-brand">
+      <span class="auth-icon">💼</span>
+      <h1 class="auth-title">Uang Kas</h1>
+      <p class="auth-sub">Monitoring Kas Driver</p>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for cat, msg in messages %}
+        <div class="alert alert-{{ cat }}">{{ msg }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('auth.login') }}" class="auth-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div class="form-group">
+        <label for="email" class="form-label">Alamat Email</label>
+        <input type="email" id="email" name="email"
+               class="form-input" placeholder="nama@email.com"
+               required autofocus autocomplete="email">
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-full">
+        Kirim Magic Link
+      </button>
+    </form>
+
+    <p class="auth-hint">
+      Link login akan dikirimkan ke email Anda.<br>
+      Berlaku selama <strong>15 menit</strong>.
+    </p>
+  </div>
+</body>
+</html>

@@ -1,0 +1,100 @@
+{% extends "base_owner.html" %}
+{% block title %}Daftar Driver{% endblock %}
+{% block page_title %}Daftar Driver{% endblock %}
+
+{% block content %}
+<div class="page-actions">
+  <a href="{{ url_for('owner_drivers.add') }}" class="btn btn-primary">+ Tambah Driver</a>
+</div>
+
+{% for d in driver_data %}
+{% set drv = d.driver %}
+<div class="driver-list-card">
+
+  <!-- ── Header baris driver ── -->
+  <div class="dlc-header">
+    <div class="dlc-info">
+      <span class="dlc-name">{{ drv.name }}</span>
+      <span class="dlc-email text-muted">{{ drv.email }}</span>
+    </div>
+    <div class="dlc-meta">
+      <span class="badge {% if drv.is_active %}badge-active{% else %}badge-inactive{% endif %}">
+        {{ 'Aktif' if drv.is_active else 'Nonaktif' }}
+      </span>
+      <span class="text-muted" style="font-size:11px">Terdaftar {{ drv.created_at | dformat }}</span>
+    </div>
+    <div class="dlc-actions">
+      <a href="{{ url_for('owner_drivers.edit', driver_id=drv.id) }}" class="btn-action">Edit</a>
+      <form action="{{ url_for('owner_drivers.resend', driver_id=drv.id) }}" method="POST" style="display:inline">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn-action btn-action-info"
+                onclick="return confirm('Kirim ulang magic link ke {{ drv.email }}?')">
+          Kirim Link
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── Saldo wallet ── -->
+  <div class="dlc-wallets">
+    {% for wtype, label in [('jenius','Jenius'), ('emoney','eMoney'), ('cash','Cash')] %}
+    {% set w = d.wallets.get(wtype) %}
+    <div class="dlc-wallet dlc-wallet-{{ wtype }}">
+      <span class="dlcw-label">{{ label }}</span>
+      <span class="dlcw-amount mono">{{ w.current_balance | rupiah if w else 'Rp 0' }}</span>
+      {% if w %}
+      <div class="dlcw-links">
+        {% if wtype in ('jenius','emoney') %}
+        <a href="{{ url_for('owner_wallets.topup', wallet_id=w.id) }}">Top Up</a>
+        {% endif %}
+        {% if wtype in ('jenius','emoney') %}
+        <a href="{{ url_for('owner_wallets.withdraw', wallet_id=w.id) }}">Tarik</a>
+        {% endif %}
+        <a href="{{ url_for('owner_reports.' + ('jenius' if wtype=='jenius' else ('cash' if wtype=='cash' else 'emoney'))) }}?driver_id={{ drv.id }}">Laporan</a>
+      </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- ── Session aktif ── -->
+  <div class="dlc-sessions">
+    <div class="dlcs-title">
+      <span class="dlcs-label">Session Aktif</span>
+      <span class="badge {% if d.sessions %}badge-online{% else %}badge-offline{% endif %}">
+        {% if d.sessions %}Online ({{ d.sessions | length }}){% else %}Offline{% endif %}
+      </span>
+    </div>
+
+    {% if d.sessions %}
+    <div class="dlcs-list">
+      {% for sess in d.sessions %}
+      <div class="dlcs-item">
+        <div class="dlcs-device">
+          <span class="dlcs-devicename">{{ sess.device_info | truncate(55, true, '…') if sess.device_info else 'Perangkat tidak diketahui' }}</span>
+          <span class="dlcs-meta text-muted">
+            IP {{ sess.ip_address or '—' }} &nbsp;·&nbsp; Login {{ sess.created_at | dtformat }}
+          </span>
+        </div>
+        <form action="{{ url_for('owner_drivers.terminate_session', session_id=sess.id) }}" method="POST">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn-action btn-action-danger"
+                  onclick="return confirm('Terminate session ini?')">
+            Terminate
+          </button>
+        </form>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="dlcs-empty text-muted">Driver belum login.</div>
+    {% endif %}
+  </div>
+
+</div>
+{% else %}
+<div class="empty-state">
+  Belum ada driver. <a href="{{ url_for('owner_drivers.add') }}">Tambah driver sekarang</a>.
+</div>
+{% endfor %}
+{% endblock %}

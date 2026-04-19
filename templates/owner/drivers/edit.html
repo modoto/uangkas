@@ -1,0 +1,88 @@
+{% extends "base_owner.html" %}
+{% block title %}Edit Driver{% endblock %}
+{% block page_title %}Edit Driver — {{ driver.name }}{% endblock %}
+
+{% block content %}
+<div class="form-card">
+  <form method="POST" action="{{ url_for('owner_drivers.edit', driver_id=driver.id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="form-group">
+      <label class="form-label" for="name">Nama Lengkap <span class="required">*</span></label>
+      <input type="text" id="name" name="name" class="form-input"
+             value="{{ driver.name }}" minlength="2" maxlength="100" required>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Email</label>
+      <input type="email" class="form-input" value="{{ driver.email }}" disabled>
+      <span class="form-hint">Email tidak dapat diubah.</span>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Status Akun</label>
+      <div class="toggle-group">
+        <label class="toggle-option">
+          <input type="radio" name="is_active" value="1"
+                 {% if driver.is_active %}checked{% endif %}>
+          <span class="toggle-label">
+            <span class="badge badge-active">Aktif</span>
+            — driver dapat login
+          </span>
+        </label>
+        <label class="toggle-option">
+          <input type="radio" name="is_active" value="0"
+                 {% if not driver.is_active %}checked{% endif %}>
+          <span class="toggle-label">
+            <span class="badge badge-inactive">Nonaktif</span>
+            — driver tidak dapat login, semua session diterminasi
+          </span>
+        </label>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <a href="{{ url_for('owner_drivers.index') }}" class="btn btn-secondary">Batal</a>
+      <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+    </div>
+  </form>
+
+  <!-- Zona hapus driver -->
+  <div class="danger-zone">
+    <div class="dz-heading">Zona Berbahaya</div>
+    <div class="dz-body">
+      <div class="dz-desc">
+        <strong>Hapus Driver</strong>
+        <span class="text-muted">Menghapus akun, wallet, dan semua session driver secara permanen. Tidak dapat dibatalkan.</span>
+      </div>
+      <button type="button" class="btn btn-danger btn-sm"
+              onclick="document.getElementById('delete-modal').classList.add('open')">
+        Hapus Driver
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal konfirmasi hapus -->
+<div id="delete-modal" class="modal-overlay" role="dialog" aria-modal="true"
+     onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal-box">
+    <h3 class="modal-title">Hapus Driver?</h3>
+    <p class="modal-body">
+      Anda akan menghapus akun <strong>{{ driver.name }}</strong> beserta semua wallet dan session-nya secara permanen.<br><br>
+      Jika driver sudah memiliki riwayat transaksi, penghapusan akan ditolak — gunakan <strong>Nonaktifkan</strong> sebagai gantinya.
+    </p>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-secondary modal-cancel" autofocus
+              onclick="document.getElementById('delete-modal').classList.remove('open')">
+        Batal
+      </button>
+      <form action="{{ url_for('owner_drivers.delete', driver_id=driver.id) }}" method="POST"
+            class="form-contents">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-danger">Hapus Permanen</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,106 @@
+{% extends "base_owner.html" %}
+{% block title %}Laporan Cash{% endblock %}
+{% block page_title %}Laporan Uang Cash{% endblock %}
+
+{% block content %}
+<!-- Filter -->
+<form method="GET" class="filter-bar">
+  <div class="filter-group">
+    <label class="form-label">Driver</label>
+    <select name="driver_id" class="form-input-sm">
+      <option value="all">Semua Driver</option>
+      {% for d in drivers %}
+      <option value="{{ d.id }}" {% if sel_driver == d.id %}selected{% endif %}>{{ d.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="filter-group">
+    <label class="form-label">Dari</label>
+    <input type="date" name="date_from" value="{{ date_from }}" class="form-input-sm">
+  </div>
+  <div class="filter-group">
+    <label class="form-label">Sampai</label>
+    <input type="date" name="date_to" value="{{ date_to }}" class="form-input-sm">
+  </div>
+  <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+</form>
+
+<!-- Laporan per driver -->
+{% for r in report_data %}
+<div class="report-section">
+  <div class="report-header">
+    <h3>{{ r.driver.name }}</h3>
+    <span class="report-period">{{ date_from }} s/d {{ date_to }}</span>
+  </div>
+
+  <!-- Ringkasan saldo -->
+  <div class="cash-summary">
+    <div class="cs-item">
+      <span class="cs-label">Saldo Awal</span>
+      <span class="cs-value mono">{{ r.opening_balance | rupiah }}</span>
+    </div>
+    <div class="cs-item text-green">
+      <span class="cs-label">+ Total Masuk (ATM)</span>
+      <span class="cs-value mono">{{ r.total_in | rupiah }}</span>
+    </div>
+    <div class="cs-item text-red">
+      <span class="cs-label">- Total Keluar</span>
+      <span class="cs-value mono">{{ r.total_out | rupiah }}</span>
+    </div>
+    <div class="cs-item cs-final">
+      <span class="cs-label">Saldo Akhir</span>
+      <span class="cs-value mono">{{ r.closing_balance | rupiah }}</span>
+    </div>
+  </div>
+
+  <!-- Tabel transaksi -->
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Tanggal &amp; Jam</th>
+          <th>Keterangan</th>
+          <th class="text-right">Masuk (+)</th>
+          <th class="text-right">Keluar (-)</th>
+          <th class="text-right">Saldo</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="row-opening">
+          <td>—</td>
+          <td><em>Saldo Awal Periode</em></td>
+          <td></td>
+          <td></td>
+          <td class="text-right mono">{{ r.opening_balance | rupiah }}</td>
+        </tr>
+        {% for txn in r.txns %}
+        <tr>
+          <td class="mono">{{ txn.txn_date | dtformat }}</td>
+          <td>
+            {{ txn.txn_type.label }}
+            {% if txn.notes %} — <span class="text-muted">{{ txn.notes }}</span>{% endif %}
+            {% if txn.linked_txn_id %}<span class="badge-linked" title="Linked">🔗</span>{% endif %}
+          </td>
+          <td class="text-right mono text-green">{{ txn.amount | rupiah if txn.is_credit else '' }}</td>
+          <td class="text-right mono text-red">{{ txn.amount | rupiah if not txn.is_credit else '' }}</td>
+          <td class="text-right mono">{{ txn.balance_after | rupiah }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" class="empty-row">Tidak ada transaksi dalam periode ini.</td></tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr class="row-total">
+          <td colspan="2"><strong>Total</strong></td>
+          <td class="text-right mono text-green"><strong>{{ r.total_in | rupiah }}</strong></td>
+          <td class="text-right mono text-red"><strong>{{ r.total_out | rupiah }}</strong></td>
+          <td class="text-right mono"><strong>{{ r.closing_balance | rupiah }}</strong></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</div>
+{% else %}
+<div class="empty-state">Tidak ada data untuk filter yang dipilih.</div>
+{% endfor %}
+{% endblock %}

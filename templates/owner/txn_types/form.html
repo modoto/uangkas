@@ -1,0 +1,101 @@
+{% extends "base_owner.html" %}
+{% set is_edit = action == 'edit' %}
+{% block title %}{{ 'Edit' if is_edit else 'Tambah' }} Jenis Transaksi{% endblock %}
+{% block page_title %}{{ 'Edit' if is_edit else 'Tambah' }} Jenis Transaksi{% endblock %}
+
+{% block content %}
+<div class="form-card">
+  {% if is_edit and tt.is_system %}
+  <div class="alert alert-warning">
+    Ini adalah jenis transaksi sistem. Kode dan arah transaksi tidak dapat diubah.
+  </div>
+  {% endif %}
+
+  <form method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    {% if is_edit %}
+    <div class="form-group">
+      <label class="form-label">Kode</label>
+      <input type="text" class="form-input mono" value="{{ tt.code }}" disabled>
+      <span class="form-hint">Kode auto-generated, tidak dapat diubah.</span>
+    </div>
+    {% endif %}
+
+    <div class="form-group">
+      <label class="form-label" for="label">Label Tampilan <span class="required">*</span></label>
+      <input type="text" id="label" name="label" class="form-input"
+             value="{{ data.get('label', '') }}"
+             placeholder="e.g. Bayar Cuci Mobil"
+             minlength="3" maxlength="100" required>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label" for="wallet_type">Berlaku untuk Wallet <span class="required">*</span></label>
+        <select id="wallet_type" name="wallet_type" class="form-input"
+                {% if is_edit and tt.is_system %}disabled{% else %}required{% endif %}>
+          {% for val, lbl in wallet_choices %}
+          <option value="{{ val }}"
+            {% if (data.get('wallet_type') or (tt.wallet_type if is_edit else '')) == val %}selected{% endif %}>
+            {{ lbl }}
+          </option>
+          {% endfor %}
+        </select>
+        {% if is_edit and tt.is_system %}
+        <input type="hidden" name="wallet_type" value="{{ tt.wallet_type }}">
+        {% endif %}
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="direction">Arah Transaksi <span class="required">*</span></label>
+        <select id="direction" name="direction" class="form-input"
+                {% if is_edit and tt.is_system %}disabled{% else %}required{% endif %}>
+          {% for val, lbl in direction_choices %}
+          <option value="{{ val }}"
+            {% if (data.get('direction') or (tt.direction if is_edit else '')) == val %}selected{% endif %}>
+            {{ lbl }}
+          </option>
+          {% endfor %}
+        </select>
+        {% if is_edit and tt.is_system %}
+        <input type="hidden" name="direction" value="{{ tt.direction }}">
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label" for="sort_order">Urutan Tampil</label>
+        <input type="number" id="sort_order" name="sort_order" class="form-input"
+               value="{{ data.get('sort_order', tt.sort_order if is_edit else 99) }}"
+               min="1" max="999">
+        <span class="form-hint">Angka kecil = tampil lebih awal di dropdown driver.</span>
+      </div>
+
+      {% if is_edit %}
+      <div class="form-group">
+        <label class="form-label">Status</label>
+        <div class="toggle-group">
+          <label class="toggle-option">
+            <input type="radio" name="is_active" value="1"
+                   {% if tt.is_active %}checked{% endif %}> Aktif
+          </label>
+          <label class="toggle-option">
+            <input type="radio" name="is_active" value="0"
+                   {% if not tt.is_active %}checked{% endif %}> Nonaktif
+          </label>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="form-actions">
+      <a href="{{ url_for('owner_txntypes.index') }}" class="btn btn-secondary">Batal</a>
+      <button type="submit" class="btn btn-primary">
+        {{ 'Simpan Perubahan' if is_edit else 'Tambah Jenis Transaksi' }}
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}

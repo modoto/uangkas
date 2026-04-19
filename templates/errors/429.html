@@ -1,0 +1,9 @@
+<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8"><title>429 — Uang Kas</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"></head>
+<body class="auth-page"><div class="auth-card" style="text-align:center">
+<div style="font-size:64px">⏳</div>
+<h2 style="color:#1E3A5F">Terlalu Banyak Permintaan</h2>
+<p>Anda telah meminta magic link terlalu sering. Coba lagi dalam beberapa menit.</p>
+<a href="{{ url_for('auth.login') }}" class="btn btn-primary">Kembali ke Login</a>
+</div></body></html>

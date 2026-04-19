@@ -1,0 +1,71 @@
+{% extends "base_driver.html" %}
+{% block title %}Revisi Transaksi{% endblock %}
+
+{% block content %}
+<div class="form-page">
+  <h2 class="form-title">Revisi Transaksi</h2>
+
+  <!-- Info transaksi yang akan direvisi -->
+  <div class="txn-edit-summary">
+    <div class="tes-row">
+      <span class="tes-label">Jenis</span>
+      <span class="tes-value">{{ txn.txn_type.label }}</span>
+    </div>
+    <div class="tes-row">
+      <span class="tes-label">Nominal</span>
+      <span class="tes-value mono {{ 'text-green' if txn.is_credit else 'text-red' }}">
+        {{ '+' if txn.is_credit else '-' }}{{ txn.amount | rupiah }}
+      </span>
+    </div>
+    <div class="tes-row">
+      <span class="tes-label">Wallet</span>
+      <span class="tes-value">{{ wallet.label }}</span>
+    </div>
+  </div>
+
+  <!-- Form edit catatan & tanggal -->
+  <form method="POST" action="{{ url_for('driver_transactions.edit', txn_id=txn.id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="form-group">
+      <label class="form-label">Tanggal</label>
+      <input type="date" name="txn_date" class="form-control"
+             value="{{ now_date }}" max="{{ now_date }}" required>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Jam</label>
+      <input type="time" name="txn_time" class="form-control"
+             value="{{ now_time }}" required>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Catatan</label>
+      <textarea name="notes" class="form-control" rows="3"
+                placeholder="Opsional">{{ txn.notes or '' }}</textarea>
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+      <a href="{{ url_for('driver_history.' + ('cash' if wallet.wallet_type == 'cash' else 'jenius')) }}"
+         class="btn btn-secondary">Batal</a>
+    </div>
+  </form>
+
+  <!-- Pembatalan transaksi (reversal) -->
+  <div class="txn-reverse-section">
+    <div class="trs-heading">Batalkan Transaksi</div>
+    <p class="trs-desc text-muted">
+      Membatalkan akan membuat transaksi kebalikan sebesar
+      <strong class="mono">{{ txn.amount | rupiah }}</strong>
+      untuk mengoreksi saldo. Tindakan ini tidak dapat diurungkan.
+    </p>
+    <form method="POST"
+          action="{{ url_for('driver_transactions.reverse', txn_id=txn.id) }}"
+          onsubmit="return confirm('Yakin ingin membatalkan transaksi ini?\nSaldo akan dikembalikan sebesar {{ txn.amount | rupiah }}.')">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn-danger">Batalkan Transaksi</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,49 @@
+{% extends "base_owner.html" %}
+{% block title %}Kelola Wallet{% endblock %}
+{% block page_title %}Kelola Wallet{% endblock %}
+
+{% block content %}
+{% for d in driver_data %}
+<div class="driver-section">
+  <div class="driver-section-header">
+    <h2 class="ds-name">{{ d.driver.name }}</h2>
+    <span class="badge {% if d.driver.is_active %}badge-active{% else %}badge-inactive{% endif %}">
+      {{ 'Aktif' if d.driver.is_active else 'Nonaktif' }}
+    </span>
+  </div>
+  <div class="wallet-cards">
+
+    {% for wtype, color in [('jenius','jenius'),('emoney','emoney'),('cash','cash')] %}
+    {% set w = d.wallets.get(wtype) %}
+    {% if w %}
+    <div class="wallet-card wc-{{ color }}">
+      <div class="wc-top">
+        <span class="wc-type">{{ wtype | upper }}</span>
+        <span class="wc-label">{{ w.label }}</span>
+      </div>
+      <div class="wc-balance">{{ w.current_balance | rupiah }}</div>
+      <div class="wc-actions">
+        {% if wtype in ('jenius', 'emoney') %}
+        <a href="{{ url_for('owner_wallets.topup', wallet_id=w.id) }}" class="btn btn-sm btn-white">Top Up</a>
+        {% endif %}
+        {% if wtype in ('jenius', 'emoney') %}
+        <a href="{{ url_for('owner_wallets.withdraw', wallet_id=w.id) }}" class="btn btn-sm btn-white-outline">Tarik</a>
+        {% endif %}
+        {% if wtype == 'jenius' %}
+        <a href="{{ url_for('owner_reports.jenius') }}?driver_id={{ d.driver.id }}" class="btn btn-sm btn-white-outline">Laporan</a>
+        {% elif wtype == 'cash' %}
+        <a href="{{ url_for('owner_reports.cash') }}?driver_id={{ d.driver.id }}" class="btn btn-sm btn-white-outline">Laporan</a>
+        {% elif wtype == 'emoney' %}
+        <a href="{{ url_for('owner_reports.emoney') }}?driver_id={{ d.driver.id }}" class="btn btn-sm btn-white-outline">Laporan</a>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+    {% endfor %}
+
+  </div>
+</div>
+{% else %}
+<div class="empty-state">Belum ada driver. <a href="{{ url_for('owner_drivers.add') }}">Tambah driver</a>.</div>
+{% endfor %}
+{% endblock %}

@@ -1,0 +1,232 @@
+{% extends "base_owner.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<!-- Kartu ringkasan per driver -->
+<div class="section-heading">Ringkasan Saldo Driver</div>
+<div class="grid-drivers">
+  {% for d in driver_data %}
+  <div class="driver-card">
+    <div class="driver-card-header">
+      <span class="driver-card-name">{{ d.driver.name }}</span>
+      <span class="badge {% if d.driver.is_active %}badge-active{% else %}badge-inactive{% endif %}">
+        {{ 'Aktif' if d.driver.is_active else 'Nonaktif' }}
+      </span>
+    </div>
+    <div class="wallet-row">
+      <div class="wallet-mini jenius">
+        <span class="wm-label">Jenius</span>
+        <span class="wm-amount">{{ d.wallets.get('jenius').current_balance | rupiah if d.wallets.get('jenius') else 'Rp 0' }}</span>
+        {% if d.wallets.get('jenius') %}
+        <div class="wm-actions">
+          <a href="{{ url_for('owner_wallets.topup', wallet_id=d.wallets.get('jenius').id) }}" class="btn-mini">Top Up</a>
+          <a href="{{ url_for('owner_wallets.withdraw', wallet_id=d.wallets.get('jenius').id) }}" class="btn-mini btn-mini-warn">Tarik</a>
+        </div>
+        {% endif %}
+      </div>
+      <div class="wallet-mini emoney">
+        <span class="wm-label">eMoney</span>
+        <span class="wm-amount">{{ d.wallets.get('emoney').current_balance | rupiah if d.wallets.get('emoney') else 'Rp 0' }}</span>
+        {% if d.wallets.get('emoney') %}
+        <div class="wm-actions">
+          <a href="{{ url_for('owner_wallets.topup', wallet_id=d.wallets.get('emoney').id) }}" class="btn-mini">Top Up</a>
+          <a href="{{ url_for('owner_wallets.withdraw', wallet_id=d.wallets.get('emoney').id) }}" class="btn-mini btn-mini-warn">Tarik</a>
+        </div>
+        {% endif %}
+      </div>
+      <div class="wallet-mini cash">
+        <span class="wm-label">Cash</span>
+        <span class="wm-amount">{{ d.wallets.get('cash').current_balance | rupiah if d.wallets.get('cash') else 'Rp 0' }}</span>
+      </div>
+    </div>
+    <div class="driver-card-footer">
+      <a href="{{ url_for('owner_reports.cash') }}?driver_id={{ d.driver.id }}" class="link-sm">Laporan Cash</a>
+      <a href="{{ url_for('owner_reports.jenius') }}?driver_id={{ d.driver.id }}" class="link-sm">Laporan Jenius</a>
+    </div>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <p>Belum ada driver. <a href="{{ url_for('owner_drivers.add') }}">Tambah driver sekarang</a>.</p>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- ── Grafik ─────────────────────────────────────────────── -->
+<div class="charts-row mt-lg">
+
+  <!-- Grafik 1: Saldo harian 30 hari -->
+  <div class="chart-card">
+    <div class="chart-card-title">Saldo Akhir per Hari (30 Hari Terakhir)</div>
+    <div class="chart-wrap">
+      <canvas id="chartBalance"></canvas>
+    </div>
+  </div>
+
+  <!-- Grafik 2: Kategori pengeluaran -->
+  <div class="chart-card">
+    <div class="chart-card-title">Kategori Pengeluaran (Semua Waktu)</div>
+    <div class="chart-wrap chart-wrap-doughnut">
+      <canvas id="chartCategory"></canvas>
+    </div>
+  </div>
+
+</div>
+
+<!-- 10 transaksi terakhir -->
+<div class="section-heading mt-lg">10 Transaksi Terakhir</div>
+<div class="table-wrap">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Tanggal &amp; Jam</th>
+        <th>Driver</th>
+        <th>Wallet</th>
+        <th>Jenis</th>
+        <th class="text-right">Nominal</th>
+        <th class="text-right">Saldo Akhir</th>
+        <th>Catatan</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for txn in recent_txns %}
+      <tr>
+        <td class="mono">{{ txn.txn_date | dtformat }}</td>
+        <td>{{ txn.creator.name }}</td>
+        <td>
+          <span class="badge-wallet badge-{{ txn.wallet.wallet_type }}">
+            {{ txn.wallet.wallet_type | upper }}
+          </span>
+        </td>
+        <td>{{ txn.txn_type.label }}</td>
+        <td class="text-right mono {% if txn.is_credit %}text-green{% else %}text-red{% endif %}">
+          {{ '+' if txn.is_credit else '-' }}{{ txn.amount | rupiah }}
+        </td>
+        <td class="text-right mono">{{ txn.balance_after | rupiah }}</td>
+        <td class="text-muted">{{ txn.notes or '—' }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="7" class="empty-row">Belum ada transaksi.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script>
+(function () {
+  const fmt = n => 'Rp ' + Number(n).toLocaleString('id-ID');
+
+  // ── Grafik saldo harian ──────────────────────────────────────
+  new Chart(document.getElementById('chartBalance'), {
+    type: 'line',
+    data: {
+      labels: {{ charts.balance_labels | tojson }},
+      datasets: [
+        {
+          label: 'Jenius',
+          data: {{ charts.balance_jenius | tojson }},
+          borderColor: '#1E3A5F',
+          backgroundColor: 'rgba(30,58,95,.08)',
+          fill: true,
+          tension: .35,
+          pointRadius: 3,
+          pointHoverRadius: 5,
+        },
+        {
+          label: 'eMoney',
+          data: {{ charts.balance_emoney | tojson }},
+          borderColor: '#1A7A5A',
+          backgroundColor: 'rgba(26,122,90,.08)',
+          fill: true,
+          tension: .35,
+          pointRadius: 3,
+          pointHoverRadius: 5,
+        },
+        {
+          label: 'Cash',
+          data: {{ charts.balance_cash | tojson }},
+          borderColor: '#B45309',
+          backgroundColor: 'rgba(180,83,9,.08)',
+          fill: true,
+          tension: .35,
+          pointRadius: 3,
+          pointHoverRadius: 5,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { position: 'top', labels: { font: { size: 11 } } },
+        tooltip: {
+          callbacks: {
+            label: ctx => ' ' + ctx.dataset.label + ': ' + fmt(ctx.parsed.y),
+          },
+        },
+      },
+      scales: {
+        x: { ticks: { font: { size: 10 }, maxRotation: 45 } },
+        y: {
+          ticks: {
+            font: { size: 10 },
+            callback: v => {
+              if (v >= 1_000_000) return 'Rp ' + (v/1_000_000).toFixed(1) + 'jt';
+              if (v >= 1_000)     return 'Rp ' + (v/1_000).toFixed(0) + 'rb';
+              return 'Rp ' + v;
+            },
+          },
+        },
+      },
+    },
+  });
+
+  // ── Grafik kategori pengeluaran ──────────────────────────────
+  const catLabels = {{ charts.cat_labels | tojson }};
+  const catData   = {{ charts.cat_data   | tojson }};
+  const palette   = [
+    '#1E3A5F','#1A7A5A','#B45309','#3B82F6','#16A34A',
+    '#DC2626','#D97706','#7C3AED','#0891B2','#BE185D',
+  ];
+
+  if (catData.length > 0) {
+    new Chart(document.getElementById('chartCategory'), {
+      type: 'doughnut',
+      data: {
+        labels: catLabels,
+        datasets: [{
+          data: catData,
+          backgroundColor: palette.slice(0, catData.length),
+          borderWidth: 2,
+          borderColor: '#fff',
+          hoverOffset: 8,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: {
+            position: 'right',
+            labels: { font: { size: 11 }, padding: 10, boxWidth: 12 },
+          },
+          tooltip: {
+            callbacks: {
+              label: ctx => ' ' + fmt(ctx.parsed) + ' (' +
+                (ctx.parsed / catData.reduce((a,b)=>a+b,0) * 100).toFixed(1) + '%)',
+            },
+          },
+        },
+      },
+    });
+  } else {
+    document.getElementById('chartCategory').closest('.chart-wrap')
+      .innerHTML = '<div class="chart-empty">Belum ada data pengeluaran.</div>';
+  }
+})();
+</script>
+{% endblock %}

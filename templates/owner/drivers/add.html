@@ -1,0 +1,35 @@
+{% extends "base_owner.html" %}
+{% block title %}Tambah Driver{% endblock %}
+{% block page_title %}Tambah Driver{% endblock %}
+
+{% block content %}
+<div class="form-card">
+  <p class="form-desc">
+    Setelah driver ditambahkan, sistem akan membuat tiga wallet (Jenius, eMoney, Cash) secara otomatis
+    dan mengirimkan magic link aktivasi ke email driver.
+  </p>
+  <form method="POST" action="{{ url_for('owner_drivers.add') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="form-group">
+      <label class="form-label" for="name">Nama Lengkap <span class="required">*</span></label>
+      <input type="text" id="name" name="name" class="form-input"
+             value="{{ name }}" placeholder="Nama lengkap driver"
+             minlength="2" maxlength="100" required autofocus>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="email">Alamat Email <span class="required">*</span></label>
+      <input type="email" id="email" name="email" class="form-input"
+             value="{{ email }}" placeholder="email@driver.com"
+             maxlength="255" required>
+      <span class="form-hint">Magic link aktivasi akan dikirim ke email ini.</span>
+    </div>
+
+    <div class="form-actions">
+      <a href="{{ url_for('owner_drivers.index') }}" class="btn btn-secondary">Batal</a>
+      <button type="submit" class="btn btn-primary">Tambah Driver &amp; Kirim Email</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

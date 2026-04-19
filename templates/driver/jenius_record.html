@@ -1,0 +1,141 @@
+{% extends "base_driver.html" %}
+{% block title %}Catat Transaksi Jenius{% endblock %}
+
+{% block content %}
+<div class="driver-form-page">
+  <h2 class="form-title">Catat Transaksi Jenius</h2>
+
+  <div class="wallet-info-bar-driver jenius">
+    <span>Saldo Jenius:</span>
+    <strong class="mono">{{ wallet.current_balance | rupiah }}</strong>
+  </div>
+
+  <form method="POST" action="{{ url_for('driver_jenius.record') }}" id="jenius-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <!-- Pilihan jenis transaksi -->
+    <div class="form-group">
+      <label class="form-label">Jenis Transaksi <span class="required">*</span></label>
+      <div class="txn-choices">
+        <label class="txn-choice {% if form.get('txn_choice') == 'atm' %}selected{% endif %}">
+          <input type="radio" name="txn_choice" value="atm"
+                 {% if form.get('txn_choice','atm') == 'atm' %}checked{% endif %}
+                 onchange="toggleOtherType(this)">
+          <span class="tc-icon">🏧</span>
+          <span class="tc-label">Tarik ATM</span>
+          <span class="tc-sub">Uang Cash bertambah otomatis</span>
+        </label>
+        <label class="txn-choice {% if form.get('txn_choice') == 'fuel' %}selected{% endif %}">
+          <input type="radio" name="txn_choice" value="fuel"
+                 {% if form.get('txn_choice') == 'fuel' %}checked{% endif %}
+                 onchange="toggleOtherType(this)">
+          <span class="tc-icon">⛽</span>
+          <span class="tc-label">Bayar Bensin</span>
+          <span class="tc-sub">Debit kartu Jenius</span>
+        </label>
+        <label class="txn-choice {% if form.get('txn_choice') == 'misc' %}selected{% endif %}">
+          <input type="radio" name="txn_choice" value="misc"
+                 {% if form.get('txn_choice') == 'misc' %}checked{% endif %}
+                 onchange="toggleOtherType(this)">
+          <span class="tc-icon">🔖</span>
+          <span class="tc-label">Lain-lain</span>
+          <span class="tc-sub">Debit atau kredit bebas</span>
+        </label>
+        {% if custom_types %}
+        <label class="txn-choice {% if form.get('txn_choice') == 'other' %}selected{% endif %}">
+          <input type="radio" name="txn_choice" value="other"
+                 {% if form.get('txn_choice') == 'other' %}checked{% endif %}
+                 onchange="toggleOtherType(this)">
+          <span class="tc-icon">📝</span>
+          <span class="tc-label">Lainnya</span>
+          <span class="tc-sub">Jenis khusus dari owner</span>
+        </label>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Toggle debit/kredit untuk Lain-lain -->
+    <div class="form-group" id="misc-dir-group"
+         style="{{ '' if form.get('txn_choice') == 'misc' else 'display:none' }}">
+      <label class="form-label">Arah Transaksi <span class="required">*</span></label>
+      <div class="dir-toggle">
+        <label class="dir-opt {% if form.get('misc_direction', 'debit') == 'debit' %}active{% endif %}">
+          <input type="radio" name="misc_direction" value="debit"
+                 {% if form.get('misc_direction', 'debit') == 'debit' %}checked{% endif %}
+                 onchange="this.closest('.dir-toggle').querySelectorAll('.dir-opt').forEach(el=>el.classList.remove('active')); this.closest('.dir-opt').classList.add('active')">
+          <span class="dir-icon">↑</span> Keluar (Debit)
+        </label>
+        <label class="dir-opt {% if form.get('misc_direction') == 'credit' %}active{% endif %}">
+          <input type="radio" name="misc_direction" value="credit"
+                 {% if form.get('misc_direction') == 'credit' %}checked{% endif %}
+                 onchange="this.closest('.dir-toggle').querySelectorAll('.dir-opt').forEach(el=>el.classList.remove('active')); this.closest('.dir-opt').classList.add('active')">
+          <span class="dir-icon">↓</span> Masuk (Kredit)
+        </label>
+      </div>
+    </div>
+
+    <!-- Dropdown jenis lainnya (owner-added) -->
+    {% if custom_types %}
+    <div class="form-group" id="other-type-group"
+         style="{{ '' if form.get('txn_choice') == 'other' else 'display:none' }}">
+      <label class="form-label" for="other_type">Pilih Jenis <span class="required">*</span></label>
+      <select id="other_type" name="other_type" class="form-input">
+        <option value="">— Pilih —</option>
+        {% for tt in custom_types %}
+        <option value="{{ tt.id }}"
+          {% if form.get('other_type') == tt.id %}selected{% endif %}>
+          {{ tt.label }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+    {% endif %}
+
+    <!-- Nominal -->
+    <div class="form-group">
+      <label class="form-label" for="nominal">Nominal (Rp) <span class="required">*</span></label>
+      <input type="number" id="nominal" name="nominal" class="form-input mono"
+             value="{{ form.get('nominal', '') }}"
+             placeholder="0" min="1000" required>
+    </div>
+
+    <!-- Tanggal & Jam -->
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label" for="txn_date">Tanggal <span class="required">*</span></label>
+        <input type="date" id="txn_date" name="txn_date" class="form-input"
+               value="{{ form.get('txn_date', '') }}" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="txn_time">Jam <span class="required">*</span></label>
+        <input type="time" id="txn_time" name="txn_time" class="form-input"
+               value="{{ form.get('txn_time', '') }}" required>
+      </div>
+    </div>
+
+    <!-- Catatan -->
+    <div class="form-group">
+      <label class="form-label" for="notes">Catatan</label>
+      <textarea id="notes" name="notes" class="form-input" rows="2"
+                maxlength="500"
+                placeholder="e.g. SPBU Gatot Subroto, SPBU Sudirman...">{{ form.get('notes', '') }}</textarea>
+    </div>
+
+    <button type="submit" class="btn btn-primary btn-full btn-lg">
+      Simpan Transaksi
+    </button>
+  </form>
+</div>
+
+<script>
+function toggleOtherType(radio) {
+  const otherGroup = document.getElementById('other-type-group');
+  const miscGroup  = document.getElementById('misc-dir-group');
+  if (otherGroup) otherGroup.style.display = radio.value === 'other' ? 'block' : 'none';
+  if (miscGroup)  miscGroup.style.display  = radio.value === 'misc'  ? 'block' : 'none';
+  // Visual selected state
+  document.querySelectorAll('.txn-choice').forEach(el => el.classList.remove('selected'));
+  radio.closest('.txn-choice').classList.add('selected');
+}
+</script>
+{% endblock %}

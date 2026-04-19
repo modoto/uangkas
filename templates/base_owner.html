@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Uang Kas{% endblock %} — Owner</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+</head>
+<body class="layout-owner">
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <span class="brand-icon">💼</span>
+      <span class="brand-name">Uang Kas</span>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="{{ url_for('owner_dashboard.index') }}"
+         class="nav-item {% if request.endpoint == 'owner_dashboard.index' %}active{% endif %}">
+        <span class="nav-icon">📊</span> Dashboard
+      </a>
+
+      <div class="nav-group-label">Driver</div>
+      <a href="{{ url_for('owner_drivers.index') }}"
+         class="nav-item {% if 'owner_drivers' in request.endpoint %}active{% endif %}">
+        <span class="nav-icon">👤</span> Daftar Driver
+      </a>
+      <a href="{{ url_for('owner_drivers.add') }}"
+         class="nav-item {% if request.endpoint == 'owner_drivers.add' %}active{% endif %}">
+        <span class="nav-icon">➕</span> Tambah Driver
+      </a>
+
+      <div class="nav-group-label">Wallet</div>
+      <a href="{{ url_for('owner_wallets.index') }}"
+         class="nav-item {% if 'owner_wallets' in request.endpoint %}active{% endif %}">
+        <span class="nav-icon">💳</span> Kelola Wallet
+      </a>
+
+      <div class="nav-group-label">Transaksi</div>
+      <a href="{{ url_for('owner_txntypes.index') }}"
+         class="nav-item {% if 'owner_txntypes' in request.endpoint %}active{% endif %}">
+        <span class="nav-icon">🏷️</span> Jenis Transaksi
+      </a>
+
+      <div class="nav-group-label">Laporan</div>
+      <a href="{{ url_for('owner_reports.jenius') }}"
+         class="nav-item {% if request.endpoint == 'owner_reports.jenius' %}active{% endif %}">
+        <span class="nav-icon">📋</span> Laporan Jenius
+      </a>
+      <a href="{{ url_for('owner_reports.cash') }}"
+         class="nav-item {% if request.endpoint == 'owner_reports.cash' %}active{% endif %}">
+        <span class="nav-icon">💵</span> Laporan Cash
+      </a>
+      <a href="{{ url_for('owner_reports.emoney') }}"
+         class="nav-item {% if request.endpoint == 'owner_reports.emoney' %}active{% endif %}">
+        <span class="nav-icon">🎫</span> Rekap eMoney
+      </a>
+
+      <div class="nav-group-label">Pengaturan</div>
+      <a href="{{ url_for('owner_sessions.index') }}"
+         class="nav-item {% if 'owner_sessions' in request.endpoint %}active{% endif %}">
+        <span class="nav-icon">🔐</span> Kelola Session
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-info">
+        <span class="user-name">{{ g.current_user.name }}</span>
+        <span class="user-role badge-owner">Owner</span>
+      </div>
+      <form action="{{ url_for('auth.logout') }}" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn-logout">Keluar</button>
+      </form>
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <div class="main-wrapper">
+    <header class="topbar">
+      <button class="sidebar-toggle" onclick="toggleSidebar()">☰</button>
+      <h1 class="page-title">{% block page_title %}Dashboard{% endblock %}</h1>
+    </header>
+
+    <main class="main-content">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for cat, msg in messages %}
+          <div class="alert alert-{{ cat }}">{{ msg }}</div>
+        {% endfor %}
+      {% endwith %}
+
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>
